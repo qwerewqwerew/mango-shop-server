@@ -2,11 +2,24 @@ const express = require("express"); //express 불러오기
 const cors = require("cors"); //cors 불러오기
 const app = express(); //불러온 express 실행
 const models = require("./models");
+const multer = require("multer");
+const upload = multer({
+	storage: multer.diskStorage({
+	  destination: function (req, file, cb) {
+		cb(null, "uploads/");
+	  },
+	  filename: function (req, file, cb) {
+		cb(null, file.originalname);
+	  },
+	}),
+  });
 const port = 8080;
 
-app.use(express.json()); //json 형식의 데이터를 express서버에서 사용할수 있도록 함
+app.use(express.json());
 app.use(cors());
-//app에 get 방식 사용시 요청,응답
+app.use("/uploads", express.static("uploads"));
+
+
 app.get("/products", (req, res) => {
 	models.Product.findAll({
 		order: [["createdAt", "DESC"]],
@@ -20,19 +33,20 @@ app.get("/products", (req, res) => {
 		})
 		.catch((error) => {
 			console.error(error);
-			res.send("에러 발생");
+			res.status(400).send("에러 발생");
 		});
 });
 
 //app에 post 방식 사용시 요청,응답
 app.post("/products", (req, res) => {
 	const body = req.body;
-	const {name, description, price, seller} = body;
+	const {name, description, price, seller, imageUrl} = body;
 	models.Product.create({
 		name,
 		description,
 		price,
 		seller,
+		imageUrl
 	})
 		.then((result) => {
 			console.log("상품생성결과:", result);
@@ -42,7 +56,7 @@ app.post("/products", (req, res) => {
 		})
 		.catch((error) => {
 			console.error(error);
-			res.send("상품 업로드에 문제가 발생했습니다.");
+			res.status(400).send("상품 업로드에 문제가 발생했습니다.");
 		});
 });
 
@@ -67,6 +81,15 @@ app.get("/products/:id", (req, res) => {
 			res.send("상품조회시 에러가 발생했습니다.");
 		});
 });
+
+app.post('/image',upload.single('image'),(req,res)=>{
+	const file=req.file;
+	console.log(file);
+	res.send({
+		imageUrl:file.path,
+	})
+})
+
 app.listen(port, () => {
 	console.log("망고샵의 서버가 구동되고 있습니다");
 	models.sequelize
