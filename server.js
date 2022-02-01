@@ -38,7 +38,7 @@ app.get('/banners',(req,res)=>{
 app.get("/products", (req, res) => {
 	models.Product.findAll({
 		order: [["createdAt", "DESC"]],
-		attributes: ["id", "name", "price", "seller", "createdAt","imageUrl"],
+		attributes: ["id", "name", "price", "seller", "createdAt","imageUrl","soldout"],
 	})
 		.then((result) => {
 			console.log("PRODUCTS : ", result);
@@ -61,7 +61,7 @@ app.post("/products", (req, res) => {
 		description,
 		price,
 		seller,
-		imageUrl
+		imageUrl,
 	})
 		.then((result) => {
 			console.log("상품생성결과:", result);
@@ -105,6 +105,29 @@ app.post('/image',upload.single('image'),(req,res)=>{
 	})
 })
 
+app.post("/purchase/:id", (req, res) => {
+	const { id } = req.params;
+	models.Product.update(
+	  {
+		soldout: 1,
+	  },
+	  {
+		where: {
+		  id,
+		},
+	  }
+	)
+	  .then((result) => {
+		res.send({
+		  result: true,
+		});
+	  })
+	  .catch((error) => {
+		console.error(error);
+		res.status(500).send("에러가 발생했습니다.");
+	  });
+  });
+  
 app.listen(port, () => {
 	console.log("망고샵의 서버가 구동되고 있습니다");
 	models.sequelize
